@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UUID Maker</title>
+  <meta name="description" content="Generate random UUIDs (v4 by default, plus v1, v3, v5, v6, v7, nil and max) entirely in your browser.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%234f46e5'/><text x='16' y='22' font-size='16' text-anchor='middle' fill='white' font-family='monospace'>id</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>UUID Maker</h1>
+      <p class="tagline">Generated in your browser. Nothing is sent anywhere.</p>
+    </header>
+
+    <section class="card">
+      <form id="generator" autocomplete="off">
+        <div class="row">
+          <label class="field">
+            <span>Version</span>
+            <select id="version" name="version">
+              <option value="4" selected>v4 · random (default)</option>
+              <option value="7">v7 · time ordered, Unix ms</option>
+              <option value="1">v1 · time + node (Gregorian)</option>
+              <option value="6">v6 · reordered v1, sortable</option>
+              <option value="5">v5 · name based, SHA-1</option>
+              <option value="3">v3 · name based, MD5</option>
+              <option value="nil">Nil · all zeros</option>
+              <option value="max">Max · all ones</option>
+            </select>
+          </label>
+          <label class="field narrow">
+            <span>How many</span>
+            <input id="count" name="count" type="number" min="1" max="1000" value="1" inputmode="numeric">
+          </label>
+        </div>
+
+        <div class="row" id="name-fields" hidden>
+          <label class="field narrow">
+            <span>Namespace</span>
+            <select id="namespace">
+              <option value="DNS">DNS</option>
+              <option value="URL">URL</option>
+              <option value="OID">OID</option>
+              <option value="X500">X.500</option>
+              <option value="custom">Custom…</option>
+            </select>
+          </label>
+          <label class="field" id="custom-ns-field" hidden>
+            <span>Custom namespace UUID</span>
+            <input id="custom-ns" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" spellcheck="false">
+          </label>
+          <label class="field">
+            <span>Name</span>
+            <input id="name" type="text" placeholder="e.g. example.com" spellcheck="false">
+          </label>
+        </div>
+
+        <p class="hint" id="version-hint"></p>
+
+        <fieldset class="options">
+          <legend>Format</legend>
+          <label><input type="checkbox" id="opt-upper"> Uppercase</label>
+          <label><input type="checkbox" id="opt-nohyphen"> No hyphens</label>
+          <label><input type="checkbox" id="opt-braces"> {Braces}</label>
+          <label><input type="checkbox" id="opt-quotes"> "Quotes"</label>
+          <label><input type="checkbox" id="opt-comma"> Comma separated</label>
+        </fieldset>
+
+        <button type="submit" class="primary">Generate</button>
+      </form>
+    </section>
+
+    <section class="card" aria-live="polite">
+      <div class="output-header">
+        <h2>Result</h2>
+        <div class="actions">
+          <button type="button" id="copy-all">Copy all</button>
+          <button type="button" id="download">Download .txt</button>
+        </div>
+      </div>
+      <p class="error" id="error" hidden></p>
+      <ul id="results" class="results"></ul>
+    </section>
+
+    <section class="card">
+      <h2>Inspect a UUID</h2>
+      <input id="inspect-input" type="text" placeholder="Paste any UUID to see its version, variant and timestamp" spellcheck="false">
+      <dl id="inspect-output" class="inspect"></dl>
+    </section>
+
+    <footer>
+      Follows <a href="https://www.rfc-editor.org/rfc/rfc9562" rel="noopener">RFC 9562</a>.
+      Randomness comes from <code>crypto.getRandomValues</code>.
+    </footer>
+  </main>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
