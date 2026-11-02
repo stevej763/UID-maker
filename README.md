@@ -23,6 +23,23 @@ npm test         # unit tests, Node 20+
 
 Opening `index.html` directly from disk won't work because browsers block ES modules on `file://`. Use any static server.
 
+## Run with Docker
+
+```sh
+docker build -t uid-maker .
+docker run --rm -p 8000:80 uid-maker   # http://localhost:8000
+```
+
+Or with Compose:
+
+```sh
+docker compose up -d --build           # http://localhost:8000
+PORT=9000 docker compose up -d --build # use a different port
+docker compose down
+```
+
+The image is plain nginx serving the static files. v5 needs `crypto.subtle`, so open it on `localhost` or put it behind https.
+
 ## Deploy to GitHub Pages
 
 The workflow in `.github/workflows/pages.yml` runs the tests and deploys on every push to `main`.

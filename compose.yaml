@@ -1,0 +1,7 @@
+services:
+  web:
+    build: .
+    image: uid-maker
+    ports:
+      - "${PORT:-8000}:80"
+    restart: unless-stopped

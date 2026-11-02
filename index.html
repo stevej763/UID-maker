@@ -12,11 +12,16 @@
   <main>
     <header>
       <h1>UUID Maker</h1>
-      <p class="tagline">Generated in your browser. Nothing is sent anywhere.</p>
     </header>
 
-    <section class="card">
-      <form id="generator" autocomplete="off">
+    <div class="tabs" role="tablist" aria-label="More options">
+      <button type="button" role="tab" id="tab-options" aria-controls="panel-options" aria-selected="false">Options</button>
+      <button type="button" role="tab" id="tab-format" aria-controls="panel-format" aria-selected="false">Format</button>
+      <button type="button" role="tab" id="tab-inspect" aria-controls="panel-inspect" aria-selected="false">Inspect</button>
+    </div>
+
+    <form id="generator" autocomplete="off">
+      <section class="card panel" role="tabpanel" id="panel-options" aria-labelledby="tab-options" hidden>
         <div class="row">
           <label class="field">
             <span>Version</span>
@@ -59,7 +64,9 @@
         </div>
 
         <p class="hint" id="version-hint"></p>
+      </section>
 
+      <section class="card panel" role="tabpanel" id="panel-format" aria-labelledby="tab-format" hidden>
         <fieldset class="options">
           <legend>Format</legend>
           <label><input type="checkbox" id="opt-upper"> Uppercase</label>
@@ -68,27 +75,30 @@
           <label><input type="checkbox" id="opt-quotes"> "Quotes"</label>
           <label><input type="checkbox" id="opt-comma"> Comma separated</label>
         </fieldset>
+      </section>
+    </form>
 
-        <button type="submit" class="primary">Generate</button>
-      </form>
+    <section class="card panel" role="tabpanel" id="panel-inspect" aria-labelledby="tab-inspect" hidden>
+      <input id="inspect-input" type="text" placeholder="Paste any UUID to see its version, variant and timestamp" spellcheck="false" aria-label="UUID to inspect">
+      <dl id="inspect-output" class="inspect"></dl>
     </section>
 
-    <section class="card" aria-live="polite">
+    <section class="card hero" aria-live="polite">
       <div class="output-header">
-        <h2>Result</h2>
+        <h2>Result <span class="badge" id="version-badge"></span></h2>
         <div class="actions">
           <button type="button" id="copy-all">Copy all</button>
-          <button type="button" id="download">Download .txt</button>
+          <button type="button" id="download">Download</button>
         </div>
       </div>
       <p class="error" id="error" hidden></p>
-      <ul id="results" class="results"></ul>
-    </section>
-
-    <section class="card">
-      <h2>Inspect a UUID</h2>
-      <input id="inspect-input" type="text" placeholder="Paste any UUID to see its version, variant and timestamp" spellcheck="false">
-      <dl id="inspect-output" class="inspect"></dl>
+      <div class="result-row">
+        <ul id="results" class="results"></ul>
+        <button type="submit" form="generator" class="refresh" id="refresh" aria-label="Generate new" title="Generate new">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+        </button>
+      </div>
+      <p class="shortcuts">Click a UUID to copy it.<span class="keys"> Press <kbd>Space</kbd> for new ones, <kbd>C</kbd> to copy.</span></p>
     </section>
 
     <footer>

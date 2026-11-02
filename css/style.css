@@ -6,7 +6,6 @@
   --muted: #5d6475;
   --border: #dfe2ea;
   --accent: #4f46e5;
-  --accent-text: #ffffff;
   --error: #c0262d;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
@@ -19,7 +18,6 @@
     --muted: #9aa1b3;
     --border: #2d3140;
     --accent: #818cf8;
-    --accent-text: #0f1020;
     --error: #ff7a7f;
   }
 }
@@ -40,7 +38,6 @@ main {
 }
 
 header h1 { margin: 0; font-size: 2rem; }
-.tagline { margin: .25rem 0 1.5rem; color: var(--muted); }
 h2 { margin: 0 0 .75rem; font-size: 1.1rem; }
 
 .card {
@@ -96,36 +93,112 @@ button {
   padding: .45rem .8rem;
 }
 button:hover { border-color: var(--accent); }
-button.primary {
-  background: var(--accent);
-  color: var(--accent-text);
-  border-color: var(--accent);
-  font-weight: 600;
-  padding: .65rem 1.4rem;
-}
 
 .output-header { display: flex; justify-content: space-between; align-items: center; gap: .5rem; flex-wrap: wrap; margin-bottom: .5rem; }
-.output-header h2 { margin: 0; }
+.output-header h2 { margin: 0; display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.badge {
+  font-size: .8rem;
+  font-weight: 500;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: .1rem .55rem;
+}
+
+.hero { padding: 1.5rem; }
+/* --row-h is shared by the UUID boxes and the refresh button so they line up. */
+.result-row { --row-h: 3rem; display: flex; align-items: flex-start; gap: .5rem; }
+.result-row .results { flex: 1; min-width: 0; min-height: var(--row-h); }
+.hero .results code { font-size: 1.15rem; }
+button.refresh {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  margin-top: calc((var(--row-h) - 2.5rem) / 2 + 3px); /* + .results padding */
+  border-radius: 50%;
+  color: var(--muted);
+}
+button.refresh:hover { color: var(--accent); }
+button.refresh:disabled { opacity: .35; cursor: default; }
+button.refresh:disabled:hover { color: var(--muted); border-color: var(--border); }
+.spin { animation: spin .4s ease-out; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+
+.tabs { display: flex; gap: .25rem; margin: 0 0 1rem; border-bottom: 1px solid var(--border); }
+.tabs [role="tab"] {
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  margin-bottom: -1px;
+  color: var(--muted);
+  padding: .5rem .9rem;
+}
+.tabs [role="tab"]:hover { color: var(--text); }
+.tabs [role="tab"][aria-selected="true"] { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+.panel[hidden] { display: none; }
+.panel .hint, .panel .options { margin-bottom: 0; }
 .actions { display: flex; gap: .5rem; }
 
 .results {
   list-style: none;
   margin: 0;
-  padding: 0;
   max-height: 420px;
   overflow-y: auto;
+  padding: 3px; /* room for focus outlines inside the scroll area */
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
 }
-.results li {
+.results code { font-family: var(--mono); font-size: 1rem; word-break: break-all; }
+.results button.uuid {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: .75rem;
-  padding: .45rem 0;
-  border-bottom: 1px solid var(--border);
+  width: 100%;
+  min-height: var(--row-h);
+  text-align: left;
+  background: color-mix(in srgb, var(--accent) 8%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-radius: 8px;
+  padding: .4rem .75rem;
 }
-.results li:last-child { border-bottom: 0; }
-.results code { font-family: var(--mono); font-size: 1rem; word-break: break-all; }
-.results button.copy { padding: .25rem .6rem; font-size: .85rem; flex-shrink: 0; }
+.results button.uuid:hover {
+  background: color-mix(in srgb, var(--accent) 14%, var(--card));
+  border-color: var(--accent);
+}
+.results button.uuid:active { background: color-mix(in srgb, var(--accent) 22%, var(--card)); }
+.results button.uuid.copied { border-color: var(--accent); }
+.results button.uuid.copied::after {
+  content: "Copied";
+  margin-left: auto;
+  padding-left: .75rem;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.shortcuts { margin: .75rem 0 0; color: var(--muted); font-size: .85rem; }
+kbd {
+  font: .8rem var(--mono);
+  border: 1px solid var(--border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 0 .3rem;
+}
+@media (hover: none) { .shortcuts .keys { display: none; } }
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 
 .error { color: var(--error); margin: 0 0 .5rem; }
 

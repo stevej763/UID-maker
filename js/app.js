@@ -43,7 +43,10 @@ function syncControls() {
   customNsField.hidden = namespaceEl.value !== 'custom';
   // Name based and special UUIDs are deterministic, so "how many" is meaningless.
   countEl.disabled = isNameBased(v) || isSingleton(v);
+  // Same goes for refresh. v3/v5 regenerate as the name is typed instead.
+  $('refresh').disabled = isNameBased(v) || isSingleton(v);
   hintEl.textContent = HINTS[v];
+  $('version-badge').textContent = versionEl.selectedOptions[0].textContent.replace(' (default)', '');
 }
 
 function format(uuid) {
@@ -73,21 +76,36 @@ async function generate() {
 }
 
 function render() {
+  $('copy-all').hidden = current.length < 2;
   resultsEl.replaceChildren();
   current.forEach((raw, i) => {
     const text = format(raw) + (opts.comma.checked && i < current.length - 1 ? ',' : '');
+    // The UUID itself is the copy button.
     const li = document.createElement('li');
-    const code = document.createElement('code');
-    code.textContent = text;
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'copy';
-    btn.textContent = 'Copy';
+    btn.className = 'uuid';
+    btn.title = 'Click to copy';
     btn.setAttribute('aria-label', `Copy ${text}`);
-    btn.addEventListener('click', () => copy(format(raw), 'Copied'));
-    li.append(code, btn);
+    const code = document.createElement('code');
+    code.textContent = text;
+    btn.append(code);
+    btn.addEventListener('click', () => copyOne(btn, format(raw)));
+    li.append(btn);
     resultsEl.append(li);
   });
+}
+
+async function copyOne(btn, text) {
+  if (!(await copy(text, 'Copied', { quiet: true }))) return;
+  btn.classList.add('copied');
+  clearTimeout(btn.copiedTimer);
+  btn.copiedTimer = setTimeout(() => btn.classList.remove('copied'), 1200);
+}
+
+function copyAll() {
+  if (current.length > 1) copy(allText(), `Copied ${current.length} UUIDs`);
+  else if (current.length) copyOne(resultsEl.querySelector('button.uuid'), format(current[0]));
 }
 
 function allText() {
@@ -107,7 +125,10 @@ async function run() {
   }
 }
 
-async function copy(text, message) {
+// Returns whether the copy worked. With quiet the toast is only announced to
+// screen readers, for when the clicked element shows its own feedback.
+async function copy(text, message, { quiet = false } = {}) {
+  let ok = true;
   try {
     await navigator.clipboard.writeText(text);
   } catch {
@@ -116,15 +137,18 @@ async function copy(text, message) {
     ta.value = text;
     document.body.append(ta);
     ta.select();
-    document.execCommand('copy');
+    try { ok = document.execCommand('copy'); } catch { ok = false; }
     ta.remove();
   }
-  toast(message);
+  if (ok) toast(message, quiet);
+  else toast('Couldn\'t copy. Select the text and copy it manually.');
+  return ok;
 }
 
 let toastTimer;
-function toast(message) {
+function toast(message, quiet = false) {
   toastEl.textContent = message;
+  toastEl.classList.toggle('sr-only', quiet);
   toastEl.hidden = false;
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { toastEl.hidden = true; }, 1400);
@@ -187,13 +211,53 @@ function renderInspect() {
 }
 
 // ---------------------------------------------------------------------------
+// Tabs. All panels start closed so the result stays front and centre;
+// clicking the open tab again closes it.
+// ---------------------------------------------------------------------------
+const tabs = [...document.querySelectorAll('[role="tab"]')];
+
+function selectTab(tab) {
+  const opening = tab && tab.getAttribute('aria-selected') !== 'true';
+  for (const t of tabs) {
+    const on = opening && t === tab;
+    t.setAttribute('aria-selected', String(on));
+    $(t.getAttribute('aria-controls')).hidden = !on;
+  }
+}
+
+tabs.forEach((tab, i) => {
+  tab.addEventListener('click', () => selectTab(tab));
+  tab.addEventListener('keydown', (e) => {
+    const step = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+    if (!step) return;
+    const next = tabs[(i + step + tabs.length) % tabs.length];
+    next.focus();
+    if (tab.getAttribute('aria-selected') === 'true') selectTab(next);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Wire up
 // ---------------------------------------------------------------------------
-form.addEventListener('submit', (e) => { e.preventDefault(); run(); });
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  run();
+  const icon = $('refresh').querySelector('svg');
+  icon.classList.remove('spin');
+  void icon.getBoundingClientRect(); // restart the animation on repeat clicks
+  icon.classList.add('spin');
+});
 versionEl.addEventListener('change', () => { syncControls(); run(); });
+// Regenerate as the count changes. Skip blank or out-of-range values while typing;
+// they're clamped when the field loses focus.
+const countIsValid = () => countEl.value !== '' && countEl.checkValidity();
+countEl.addEventListener('input', () => { if (countIsValid()) run(); });
+countEl.addEventListener('change', () => { if (!countIsValid()) run(); });
 namespaceEl.addEventListener('change', () => { syncControls(); if (namespaceEl.value !== 'custom') run(); });
+nameEl.addEventListener('input', run);
+customNsEl.addEventListener('input', run);
 Object.values(opts).forEach((el) => el.addEventListener('change', () => { render(); saveSettings(); }));
-$('copy-all').addEventListener('click', () => current.length && copy(allText(), `Copied ${current.length}`));
+$('copy-all').addEventListener('click', copyAll);
 $('download').addEventListener('click', () => {
   if (!current.length) return;
   const url = URL.createObjectURL(new Blob([allText() + '\n'], { type: 'text/plain' }));
@@ -202,6 +266,26 @@ $('download').addEventListener('click', () => {
   URL.revokeObjectURL(url);
 });
 $('inspect-input').addEventListener('input', renderInspect);
+
+// Keyboard shortcuts: Space or R for new UUIDs, C to copy, Esc to close the open tab.
+document.addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === 'Escape') {
+    const open = tabs.find((t) => t.getAttribute('aria-selected') === 'true');
+    if (open) { open.focus(); selectTab(null); }
+    return;
+  }
+  if (e.target.closest('input, select, textarea')) return;
+  const key = e.key.toLowerCase();
+  // Space on a focused button should still press that button.
+  if (key === ' ' && e.target.closest('button')) return;
+  if (key === ' ' || key === 'r') {
+    e.preventDefault();
+    if (!$('refresh').disabled) form.requestSubmit();
+  } else if (key === 'c') {
+    copyAll();
+  }
+});
 
 loadSettings();
 syncControls();
